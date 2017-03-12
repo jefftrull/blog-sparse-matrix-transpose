@@ -3,6 +3,8 @@
 #include <map>
 #include <numeric>
 
+#include <boost/iterator/zip_iterator.hpp>
+
 #include "nothing.hpp"
 
 //
@@ -56,6 +58,9 @@ stdalg_run(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_col
         // use counting iterator
 
         IndexT B_offset = B_rows[col_in_A]; // index of first unwritten element in this row
+        // construct an output iterator for the {row, value} pairs
+        auto entry_it = boost::make_zip_iterator(boost::make_tuple(B_cols.begin() + B_offset,
+                                                                   B_values.begin() + B_offset));
 
         // next phase: an iterator returning row and value pairs for a given column
         // write this custom with iterator_facade
@@ -71,10 +76,8 @@ stdalg_run(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_col
                 // non-empty range means we have found the target value
                 // Add this row (and the associated value) to B
                 IndexT nnz_index = std::distance(A_cols.begin(), col_range.first);
-                IndexT B_nnz_index = B_offset;
-                B_cols[B_nnz_index] = row;
-                B_values[B_nnz_index] = A_values[nnz_index];
-                B_offset++;
+                *entry_it = std::make_pair(row, A_values[nnz_index]);
+                ++entry_it;
             }
         }
     }
