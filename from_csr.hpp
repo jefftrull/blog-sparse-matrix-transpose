@@ -32,6 +32,79 @@ void run(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_cols,
 }
 
 
+template<typename IndexT, typename NumericT>
+struct colwise_nz_iterator : boost::iterator_facade<colwise_nz_iterator<IndexT, NumericT>,
+                                                    std::pair<IndexT, NumericT>,
+                                                    std::forward_iterator_tag,
+                                                    std::pair<IndexT, NumericT> const&>
+{
+    colwise_nz_iterator(std::vector<IndexT> const&   rows,
+                        std::vector<IndexT> const&   cols,
+                        std::vector<NumericT> const& values,
+                        IndexT                       col)
+        : sentinel_(false), rows_(&rows), cols_(&cols), values_(&values), col_(col), row_(0)
+    {
+        // if there is no row 0, go forward through the rows until you find one
+        // or you reach the end of the column
+        advance_to_valid();
+    }
+
+    colwise_nz_iterator() : sentinel_(true) {}    // end of column reached
+
+    // iterator_facade requirements
+
+    std::pair<IndexT, NumericT> const & dereference() const
+    {
+        return it_value_;
+    }
+
+    bool equal(colwise_nz_iterator const & other) const
+    {
+        return ((sentinel_ && other.sentinel_) ||
+                ((!sentinel_ && !other.sentinel_) &&
+                 (row_ == other.row_)));
+    }
+
+    void increment() {
+        ++row_;
+        advance_to_valid();
+    }
+
+private:
+
+    void advance_to_valid() {
+        IndexT N = rows_->size() - 1;
+
+        auto col_range = std::equal_range(cols_->begin() + (*rows_)[row_],
+                                          cols_->begin() + (*rows_)[row_+1],
+                                          col_);
+        while ((col_range.first == col_range.second) && (row_ < N))
+        {
+            ++row_;
+            col_range = std::equal_range(cols_->begin() + (*rows_)[row_],
+                                         cols_->begin() + (*rows_)[row_+1],
+                                         col_);
+        }
+        if (row_ >= N)
+        {
+            sentinel_ = true;
+        } else {
+            IndexT nnz_index = std::distance(cols_->begin(), col_range.first);
+            it_value_ = std::make_pair(row_, (*values_)[nnz_index]);
+        }
+    }
+
+    bool                          sentinel_;      // end sentinel.  Could use (row >= N) also?
+    std::vector<IndexT> const *   rows_;
+    std::vector<IndexT> const *   cols_;
+    std::vector<NumericT> const * values_;
+    IndexT                        col_;           // column we are traversing
+    IndexT                        row_;           // the current row
+
+    std::pair<IndexT, NumericT>   it_value_;      // for returning when dereferenced
+
+};
+
 // create outer pointers my way, for comparison
 template<typename IndexT, typename NumericT>
 void
@@ -62,24 +135,13 @@ stdalg_run(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_col
         auto entry_it = boost::make_zip_iterator(boost::make_tuple(B_cols.begin() + B_offset,
                                                                    B_values.begin() + B_offset));
 
-        // next phase: an iterator returning row and value pairs for a given column
-        // write this custom with iterator_facade
-        // finally zip iterator and run copy?  But B_offsets would have to be zipped iterators
+        // now the input iterator
+        auto beg = colwise_nz_iterator<IndexT, NumericT>(A_rows, A_cols, A_values, col_in_A);
+        auto end = colwise_nz_iterator<IndexT, NumericT>();
 
-        // look for this column in each row
-        for (IndexT row = 0; row < N; ++row) {
-            // take advantage of sorted column numbers to locate, if present
-            auto col_range = std::equal_range(A_cols.begin() + A_rows[row],
-                                              A_cols.begin() + A_rows[row+1],
-                                              col_in_A);
-            if (col_range.first != col_range.second) {
-                // non-empty range means we have found the target value
-                // Add this row (and the associated value) to B
-                IndexT nnz_index = std::distance(A_cols.begin(), col_range.first);
-                *entry_it = std::make_pair(row, A_values[nnz_index]);
-                ++entry_it;
-            }
-        }
+        // and copy the data for this column
+        std::copy(beg, end, entry_it);
+
     }
 }
 
