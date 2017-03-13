@@ -4,6 +4,7 @@
 #include <numeric>
 
 #include <boost/iterator/zip_iterator.hpp>
+#include <boost/fusion/adapted/std_pair.hpp>
 
 #include "nothing.hpp"
 
@@ -132,8 +133,8 @@ stdalg_run(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_col
 
         IndexT B_offset = B_rows[col_in_A]; // index of first unwritten element in this row
         // construct an output iterator for the {row, value} pairs
-        auto entry_it = boost::make_zip_iterator(boost::make_tuple(B_cols.begin() + B_offset,
-                                                                   B_values.begin() + B_offset));
+        auto entry_it = boost::make_zip_iterator(std::make_pair(B_cols.begin() + B_offset,
+                                                                B_values.begin() + B_offset));
 
         // now the input iterator
         auto beg = colwise_nz_iterator<IndexT, NumericT>(A_rows, A_cols, A_values, col_in_A);
