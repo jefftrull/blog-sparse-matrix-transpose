@@ -4,6 +4,8 @@ cmake_minimum_required( VERSION 3.5 )
 
 add_executable( transpose main.cpp nothing.cpp )
 
+include_directories(${RANGE_INCLUDE})
+
 # Release build by default
 if( NOT CMAKE_BUILD_TYPE )
   set( CMAKE_BUILD_TYPE Release CACHE STRING "Default build type (Debug, Release, RelWithDebInfo)" FORCE )

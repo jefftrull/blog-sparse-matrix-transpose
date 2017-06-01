@@ -185,6 +185,18 @@ int main(int argc, char **argv)
   }
   print_median(exec_times);
 
+  // csr to csr with range-v3
+  for (std::size_t i=0; i<runs; ++i)
+  {
+    timer.start();
+    std::vector<unsigned int> B_rows;
+    std::vector<unsigned int> B_cols;
+    std::vector<double> B_values;
+    run_range_v3(A_csr_rows, A_csr_cols, A_csr_values, B_rows, B_cols, B_values);
+    exec_times[i] = timer.get();
+  }
+  print_median(exec_times);
+
   std::cout << std::endl;
 
   return EXIT_SUCCESS;
