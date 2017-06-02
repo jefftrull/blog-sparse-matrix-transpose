@@ -2,6 +2,13 @@
 #include <vector>
 #include <map>
 
+#include <hpx/hpx.hpp>
+#include <hpx/include/parallel_numeric.hpp>
+#include <hpx/include/parallel_algorithm.hpp>
+#include <hpx/include/iostreams.hpp>
+#include <hpx/util/zip_iterator.hpp>
+#include <hpx/util/tuple.hpp>
+
 #include "nothing.hpp"
 
 //
@@ -92,3 +99,47 @@ void run(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_cols,
   do_nothing(B_rows, B_cols, B_values);
 }
 
+template<typename IndexT, typename NumericT>
+void run_hpx(std::vector<IndexT> const & A_rows, std::vector<IndexT>         A_cols, std::vector<NumericT>         A_values,
+             std::vector<IndexT>       & B_rows, std::vector<IndexT>       & B_cols, std::vector<NumericT>       & B_values)
+{
+  using namespace hpx::parallel;
+
+  // create a vector holding the current row indices (future column indices) of each value
+  std::vector<IndexT> row_ind; row_ind.resize(A_cols.size());
+  for_loop(execution::par, 0, A_rows.size()-1,
+           [&](IndexT i) {
+             // fill the row indices for this row
+             std::fill(row_ind.begin() + A_rows[i],
+                       row_ind.begin() + A_rows[i+1],
+                       i);
+           });
+
+  // sort a zip of (old row indices, old column indices, values)
+  // by (old column indices, old row indices) to produce a column major order
+
+  auto col_major_start = hpx::util::make_zip_iterator(A_cols.begin(), row_ind.begin(), A_values.begin());
+  auto col_major_stop  = hpx::util::make_zip_iterator(A_cols.end(), row_ind.end(), A_values.end());
+
+  // stable_sort using just (old column indices) will also work here - need to investigate perf
+  sort(execution::par, col_major_start, col_major_stop);
+
+  // swap the sorted row indices into place as the new columns
+  std::swap(A_cols, row_ind);
+  std::swap(B_cols, A_cols);
+  std::swap(B_values, A_values);
+
+  // scan the new row indices to locate row boundaries
+  B_rows.resize(A_rows.size());         // assuming square matrix
+  for_loop(execution::par, 0, B_rows.size(),
+           [&](IndexT row) {
+             auto it = std::lower_bound(row_ind.begin(), row_ind.end(), row);
+             if (it == row_ind.end()) {
+               B_rows[row] = B_cols.size();   // no elements on this or later rows
+             } else {
+               B_rows[row] = std::distance(row_ind.begin(), it);
+             }
+           });
+
+  do_nothing(B_rows, B_cols, B_values);
+}

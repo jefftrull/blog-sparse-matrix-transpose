@@ -9,6 +9,8 @@
 #include "from_map.hpp"
 #include "benchmark-utils.hpp"
 
+#include <hpx/hpx_init.hpp>
+
 #include <boost/interprocess/containers/flat_map.hpp>
 
 void print_median(std::vector<double> & exec_times)
@@ -17,8 +19,18 @@ void print_median(std::vector<double> & exec_times)
   std::cout << exec_times[exec_times.size()/2] << "     ";
 }
 
+int main(int argc, char* argv[])
+{
+    // By default this should run on all available cores
+    std::vector<std::string> const cfg = {
+        "hpx.os_threads=all"
+    };
 
-int main(int argc, char **argv)
+    // Initialize and run HPX
+    return hpx::init(argc, argv, cfg);
+}
+
+int hpx_main(int argc, char **argv)
 {
   if (argc < 3)
   {
@@ -185,7 +197,20 @@ int main(int argc, char **argv)
   }
   print_median(exec_times);
 
+  // csr to csr, with HPX
+  for (std::size_t i=0; i<runs; ++i)
+  {
+    timer.start();
+    std::vector<unsigned int> B_rows;
+    std::vector<unsigned int> B_cols;
+    std::vector<double> B_values;
+    run_hpx(A_csr_rows, A_csr_cols, A_csr_values, B_rows, B_cols, B_values);
+    exec_times[i] = timer.get();
+
+  }
+  print_median(exec_times);
+
   std::cout << std::endl;
 
-  return EXIT_SUCCESS;
+  return hpx::finalize();
 }

@@ -2,7 +2,31 @@
 
 cmake_minimum_required( VERSION 3.5 )
 
+if (NOT DEFINED HPX_ROOT)
+  message(FATAL_ERROR "please supply a path to the HPX install directory with -DHPX_ROOT=<some-path>")
+endif()
+
+find_package( Boost 1.63 REQUIRED COMPONENTS system program_options filesystem )
+
+add_library( HPX::HPX SHARED IMPORTED )
+set_target_properties( HPX::HPX PROPERTIES
+  IMPORTED_LOCATION ${HPX_ROOT}/lib/libhpx.so
+  INTERFACE_LINK_LIBRARIES Boost::filesystem
+)
+
+include_directories( SYSTEM ${HPX_ROOT}/include )
+
 add_executable( transpose main.cpp nothing.cpp )
+
+target_link_libraries( transpose HPX::HPX ${HPX_ROOT}/lib/libhpx_init.a Boost::system Boost::program_options )
+
+set_target_properties( transpose PROPERTIES
+  CXX_STANDARD 14
+)
+
+# HPX builds shared libraries that refer to Boost libs without specifying an RPATH, probably by design
+# It seems we cannot work around this in our own RPATH, so we need to run like this:
+# LD_LIBRARY_PATH=${BOOST_ROOT}/stage/lib ./transpose ...
 
 # Release build by default
 if( NOT CMAKE_BUILD_TYPE )
