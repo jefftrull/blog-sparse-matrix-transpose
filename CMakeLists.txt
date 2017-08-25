@@ -2,12 +2,34 @@
 
 cmake_minimum_required( VERSION 3.5 )
 
-add_executable( transpose main.cpp nothing.cpp )
-
 # Release build by default
 if( NOT CMAKE_BUILD_TYPE )
   set( CMAKE_BUILD_TYPE Release CACHE STRING "Default build type (Debug, Release, RelWithDebInfo)" FORCE )
 endif()
+
+# download and use Google Benchmark
+include( ExternalProject )
+ExternalProject_Add( GBENCH
+  GIT_REPOSITORY https://github.com/google/benchmark
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gbench
+  CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DBENCHMARK_ENABLE_TESTING=OFF
+  UPDATE_COMMAND ""
+  INSTALL_COMMAND ""
+)
+ExternalProject_Get_Property( GBENCH SOURCE_DIR BINARY_DIR )
+add_library( gbench STATIC IMPORTED )
+
+# create include directory, which will be absent at initial run
+execute_process( COMMAND ${CMAKE_COMMAND} -E make_directory ${SOURCE_DIR}/include )
+set_target_properties( gbench PROPERTIES
+  IMPORTED_LOCATION "${BINARY_DIR}/src/libbenchmark.a"
+  INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_DIR}/include"
+  INTERFACE_LINK_LIBRARIES pthread
+)
+add_dependencies( gbench GBENCH )
+
+add_executable( transpose main.cpp )
+target_link_libraries( transpose gbench )
 
 # Create a target for running transpose on different size matrices
 add_custom_command(

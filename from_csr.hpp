@@ -1,8 +1,7 @@
+#include <benchmark/benchmark.h>
 
 #include <vector>
 #include <map>
-
-#include "nothing.hpp"
 
 //
 // CSR to map
@@ -25,7 +24,7 @@ void run(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_cols,
     row_start = row_stop;
   }
 
-  do_nothing(B);
+  benchmark::DoNotOptimize(B);
 }
 
 
@@ -89,6 +88,8 @@ void run(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_cols,
     row_start = row_stop;
   }
 
-  do_nothing(B_rows, B_cols, B_values);
+  benchmark::DoNotOptimize(B_rows);
+  benchmark::DoNotOptimize(B_cols);
+  benchmark::DoNotOptimize(B_values);
 }
 
