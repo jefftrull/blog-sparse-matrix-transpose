@@ -2,26 +2,18 @@
 
 cmake_minimum_required( VERSION 3.5 )
 
+find_package( Boost 1.63 REQUIRED COMPONENTS system program_options filesystem )
+
 if (NOT DEFINED HPX_ROOT)
   message(FATAL_ERROR "please supply a path to the HPX install directory with -DHPX_ROOT=<some-path>")
 endif()
-
-find_package( Boost 1.63 REQUIRED COMPONENTS system program_options filesystem )
 
 add_library( HPX::HPX SHARED IMPORTED )
 set_target_properties( HPX::HPX PROPERTIES
   IMPORTED_LOCATION ${HPX_ROOT}/lib/libhpx.so
   INTERFACE_LINK_LIBRARIES Boost::filesystem
-)
-
-include_directories( SYSTEM ${HPX_ROOT}/include )
-
-add_executable( transpose main.cpp nothing.cpp )
-
-target_link_libraries( transpose HPX::HPX ${HPX_ROOT}/lib/libhpx_init.a Boost::system Boost::program_options )
-
-set_target_properties( transpose PROPERTIES
-  CXX_STANDARD 14
+  INTERFACE_INCLUDE_DIRECTORIES ${HPX_ROOT}/include
+  INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${HPX_ROOT}/include
 )
 
 # HPX builds shared libraries that refer to Boost libs without specifying an RPATH, probably by design
@@ -32,6 +24,35 @@ set_target_properties( transpose PROPERTIES
 if( NOT CMAKE_BUILD_TYPE )
   set( CMAKE_BUILD_TYPE Release CACHE STRING "Default build type (Debug, Release, RelWithDebInfo)" FORCE )
 endif()
+
+# download and use Google Benchmark
+include( ExternalProject )
+ExternalProject_Add( GBENCH
+  GIT_REPOSITORY https://github.com/google/benchmark
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gbench
+  CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DBENCHMARK_ENABLE_TESTING=OFF
+  UPDATE_COMMAND ""
+  INSTALL_COMMAND ""
+)
+ExternalProject_Get_Property( GBENCH SOURCE_DIR BINARY_DIR )
+add_library( gbench STATIC IMPORTED )
+
+# create include directory, which will be absent at initial run
+execute_process( COMMAND ${CMAKE_COMMAND} -E make_directory ${SOURCE_DIR}/include )
+set_target_properties( gbench PROPERTIES
+  IMPORTED_LOCATION "${BINARY_DIR}/src/libbenchmark.a"
+  INTERFACE_INCLUDE_DIRECTORIES "${SOURCE_DIR}/include"
+  INTERFACE_LINK_LIBRARIES pthread
+)
+add_dependencies( gbench GBENCH )
+
+add_executable( transpose main.cpp )
+
+target_link_libraries( transpose gbench HPX::HPX ${HPX_ROOT}/lib/libhpx_init.a Boost::system Boost::program_options )
+
+set_target_properties( transpose PROPERTIES
+  CXX_STANDARD 14
+)
 
 # Create a target for running transpose on different size matrices
 add_custom_command(
