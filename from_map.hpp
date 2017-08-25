@@ -1,7 +1,7 @@
 
 #include <vector>
 
-#include "nothing.hpp"
+#include <benchmark/benchmark.h>
 
 //
 // map to map, map to flat_map, flat_map to map, flat_map to flat_map
@@ -16,7 +16,7 @@ void run(std::vector<RowType1> const & A,
     for (typename RowType1::const_iterator it = A[i].begin(); it != A[i].end(); ++it)
       B[it->first][i] = it->second;
 
-  do_nothing(B);
+  benchmark::DoNotOptimize(B);
 }
 
 
@@ -77,6 +77,8 @@ void run(std::vector<RowT> const & A,
     }
   }
 
-  do_nothing(B_rows, B_cols, B_values);
+  benchmark::DoNotOptimize(B_rows);
+  benchmark::DoNotOptimize(B_cols);
+  benchmark::DoNotOptimize(B_values);
 }
 

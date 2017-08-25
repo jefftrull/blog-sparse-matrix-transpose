@@ -1,3 +1,4 @@
+#include <benchmark/benchmark.h>
 
 #include <vector>
 #include <map>
@@ -17,8 +18,6 @@
 #include <range/v3/view/zip.hpp>
 #include <range/v3/view/empty.hpp>
 #include <range/v3/view/any_view.hpp>
-
-#include "nothing.hpp"
 
 //
 // CSR to map
@@ -41,7 +40,7 @@ void run(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_cols,
     row_start = row_stop;
   }
 
-  do_nothing(B);
+  benchmark::DoNotOptimize(B);
 }
 
 
@@ -89,7 +88,9 @@ void run(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_cols,
     row_start = row_stop;
   }
 
-  do_nothing(B_rows, B_cols, B_values);
+  benchmark::DoNotOptimize(B_rows);
+  benchmark::DoNotOptimize(B_cols);
+  benchmark::DoNotOptimize(B_values);
 }
 
 //
@@ -158,5 +159,7 @@ void run_range_v3(std::vector<IndexT> const & A_rows, std::vector<IndexT>       
                                  return single(distance(row_ind.begin(), row_ind_it));
                                });
 
-  do_nothing(B_rows, B_cols, B_values);
+  benchmark::DoNotOptimize(B_rows);
+  benchmark::DoNotOptimize(B_cols);
+  benchmark::DoNotOptimize(B_values);
 }
