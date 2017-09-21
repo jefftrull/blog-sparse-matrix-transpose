@@ -8,7 +8,7 @@ if( NOT CMAKE_BUILD_TYPE )
 endif()
 
 if( NOT RANGE_INCLUDE )
-  message( FATAL_ERROR "Please specify a path to the range-v3 include directories with -DRANGE_V3=<path...>" )
+  message( FATAL_ERROR "Please specify a path to the range-v3 include directories with -DRANGE_INCLUDE=<path...>" )
 endif()
 
 # download and use Google Benchmark
