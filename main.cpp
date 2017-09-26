@@ -153,6 +153,17 @@ int main(int argc, char **argv)
       }
     });
 
+  benchmark::RegisterBenchmark(
+    "CSR2CSR_heap",
+    [=](benchmark::State & state) {
+      while (state.KeepRunning()) {
+        std::vector<unsigned int> B_rows;
+        std::vector<unsigned int> B_cols;
+        std::vector<double> B_values;
+        run_heap(A_csr_rows, A_csr_cols, A_csr_values, B_rows, B_cols, B_values);
+      }
+    });
+
   //
   // Run benchmarks
   //
