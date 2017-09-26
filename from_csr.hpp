@@ -5,7 +5,7 @@
 #include <numeric>
 
 #include <range/v3/algorithm/for_each.hpp>
-#include <range/v3/algorithm/sort.hpp>
+#include <range/v3/algorithm/inplace_merge.hpp>
 #include <range/v3/view/concat.hpp>
 #include <range/v3/view/single.hpp>
 #include <range/v3/view/take.hpp>
@@ -116,6 +116,39 @@ adj_diff_view(Rng r, Fn f = Fn()) {
                   zip_with(f, tail(r), slice(r, 0, rng::end-1)));
 }
 
+template<typename RowIter, typename ColRange>
+void merge_rows_by_col(RowIter row_idx_start,    // subrange of the row indices
+                       RowIter row_idx_stop,
+                       ColRange cols) {          // beginning of the column range
+  // the columns of interest begin at offset *row_idx_start and run
+  // to right before *(row_idx_stop-1)
+  if (std::distance(row_idx_start, row_idx_stop) < 3) {
+    // nothing to do
+    return;
+  }
+
+  // otherwise divide into roughly equal sets of rows and recurse
+  RowIter row_idx_mid = row_idx_start + std::distance(row_idx_start, row_idx_stop) / 2;
+  // note deliberate overlap: delimiting rows N through N+M requires M+1 row indices, plus end iterator
+
+  merge_rows_by_col(row_idx_start, row_idx_mid + 1, cols);
+  merge_rows_by_col(row_idx_mid, row_idx_stop, cols);
+
+  // now merge the subranges
+  namespace rng = ranges::v3;
+  using namespace rng::view;
+  using namespace std;
+  rng::inplace_merge(std::begin(cols) + *row_idx_start,
+                     std::begin(cols) + *row_idx_mid,
+                     std::begin(cols) + *(row_idx_stop - 1),
+                     [](auto const & a, auto const & b) {
+                         // inplace_merge is stable both within ranges and between them
+                         // which means we need only look at the column number
+                         // (we are already in row order)
+                         return get<0>(a) < get<0>(b);
+                     });
+}
+
 template<typename IndexT, typename NumericT>
 void run_range_v3(std::vector<IndexT> const & A_rows, std::vector<IndexT>         A_cols, std::vector<NumericT>         A_values,
                   std::vector<IndexT>       & B_rows, std::vector<IndexT>       & B_cols, std::vector<NumericT>       & B_values)
@@ -141,9 +174,8 @@ void run_range_v3(std::vector<IndexT> const & A_rows, std::vector<IndexT>       
 
   auto col_major_zip = zip(A_cols, row_ind, A_values);
 
-  // stable_sort using just (old column indices) will also work here - need to investigate perf
-  rng::sort(col_major_zip,
-            [](auto a, auto b) { return tie(get<0>(a), get<1>(a)) < tie(get<0>(b), get<1>(b)); });
+  // because each row is internally already sorted we can merge by row instead of sorting
+  merge_rows_by_col( A_rows.begin(), A_rows.end(), col_major_zip );
 
   // swap the sorted row indices into place as the new columns
   swap(A_cols, row_ind);
