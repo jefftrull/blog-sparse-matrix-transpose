@@ -138,8 +138,8 @@ void run_heap(std::vector<IndexT> const & A_rows, std::vector<IndexT> const & A_
       // update heap
       // we *always* remove the smallest value from the heap.
       // We *sometimes* (when there are remaining columns in the row) replace it with a new value
-      row_start_heap.pop();
       std::size_t col_idx = std::get<0>(min_elt) + 1;
+      row_start_heap.pop();
       if (col_idx < A_rows[old_row+1]) {
           // there is still data in the row; add next column to the heap
           row_start_heap.emplace(col_idx, old_row);
