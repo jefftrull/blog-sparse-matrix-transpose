@@ -16,6 +16,9 @@
 
 int main(int argc, char* argv[])
 {
+    // process and remove gbench arguments
+    benchmark::Initialize(&argc, argv);
+
     // By default this should run on all available cores
     std::vector<std::string> const cfg = {
         "hpx.os_threads=all"
@@ -27,8 +30,6 @@ int main(int argc, char* argv[])
 
 int hpx_main(int argc, char **argv)
 {
-  // process and remove gbench arguments
-  benchmark::Initialize(&argc, argv);
 
   if (argc < 3)
   {
