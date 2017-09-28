@@ -105,6 +105,7 @@ void run_hpx(std::vector<IndexT> const & A_rows, std::vector<IndexT>         A_c
              std::vector<IndexT>       & B_rows, std::vector<IndexT>       & B_cols, std::vector<NumericT>       & B_values)
 {
   using namespace hpx::parallel;
+  using namespace hpx::util;
 
   // create a vector holding the current row indices (future column indices) of each value
   std::vector<IndexT> row_ind; row_ind.resize(A_cols.size());
@@ -119,11 +120,14 @@ void run_hpx(std::vector<IndexT> const & A_rows, std::vector<IndexT>         A_c
   // sort a zip of (old row indices, old column indices, values)
   // by (old column indices, old row indices) to produce a column major order
 
-  auto col_major_start = hpx::util::make_zip_iterator(A_cols.begin(), row_ind.begin(), A_values.begin());
-  auto col_major_stop  = hpx::util::make_zip_iterator(A_cols.end(), row_ind.end(), A_values.end());
+  auto col_major_start = make_zip_iterator(A_cols.begin(), row_ind.begin(), A_values.begin());
+  auto col_major_stop  = make_zip_iterator(A_cols.end(), row_ind.end(), A_values.end());
 
   // stable_sort using just (old column indices) will also work here - need to investigate perf
-  sort(execution::par_unseq, col_major_start, col_major_stop);
+  sort(execution::par_unseq, col_major_start, col_major_stop,
+       [](auto a, auto b) {
+           return std::tie(get<0>(a), get<1>(a)) < std::tie(get<0>(b), get<1>(b));
+       });
 
   // swap the sorted row indices into place as the new columns
   std::swap(A_cols, row_ind);
