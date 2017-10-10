@@ -123,27 +123,22 @@ void run_hpx(std::vector<IndexT> const & A_rows, std::vector<IndexT>         A_c
   auto col_major_start = make_zip_iterator(A_cols.begin(), row_ind.begin(), A_values.begin());
   auto col_major_stop  = make_zip_iterator(A_cols.end(), row_ind.end(), A_values.end());
 
-  // stable_sort using just (old column indices) will also work here - need to investigate perf
+  // stable_sort doesn't seem to work with zip iterators in HPX, so no point investigating
   sort(execution::par_unseq, col_major_start, col_major_stop,
        [](auto a, auto b) {
            return std::tie(get<0>(a), get<1>(a)) < std::tie(get<0>(b), get<1>(b));
        });
 
   // swap the sorted row indices into place as the new columns
-  std::swap(A_cols, row_ind);
-  std::swap(B_cols, A_cols);
-  std::swap(B_values, A_values);
+  B_cols = std::move(row_ind);    // row_ind is broken up so it indicates the new columns
+  std::swap(B_values, A_values);  // A_values is now in the right order
 
-  // scan the new row indices to locate row boundaries
+  // scan the new row indices (the newly sorted A_cols) to locate row boundaries
   B_rows.resize(A_rows.size());         // assuming square matrix
   for_loop(execution::par_unseq, 0, B_rows.size(),
            [&](IndexT row) {
-             auto it = std::lower_bound(row_ind.begin(), row_ind.end(), row);
-             if (it == row_ind.end()) {
-               B_rows[row] = B_cols.size();   // no elements on this or later rows
-             } else {
-               B_rows[row] = std::distance(row_ind.begin(), it);
-             }
+             auto it = std::lower_bound(A_cols.begin(), A_cols.end(), row);
+             B_rows[row] = std::distance(A_cols.begin(), it);
            });
 
   benchmark::DoNotOptimize(B_rows);
