@@ -168,13 +168,24 @@ int hpx_main(int argc, char **argv)
     });
 
   benchmark::RegisterBenchmark(
-    "CSR2CSR-HPX",
+    "CSR2CSR-HPX-SORT",
     [=](benchmark::State & state) {
       while (state.KeepRunning()) {
         std::vector<unsigned int> B_rows;
         std::vector<unsigned int> B_cols;
         std::vector<double> B_values;
         run_hpx(A_csr_rows, A_csr_cols, A_csr_values, B_rows, B_cols, B_values);
+      }
+    });
+
+  benchmark::RegisterBenchmark(
+    "CSR2CSR-HPX-MERGE",
+    [=](benchmark::State & state) {
+      while (state.KeepRunning()) {
+        std::vector<unsigned int> B_rows;
+        std::vector<unsigned int> B_cols;
+        std::vector<double> B_values;
+        run_hpx_merge(A_csr_rows, A_csr_cols, A_csr_values, B_rows, B_cols, B_values);
       }
     });
 
