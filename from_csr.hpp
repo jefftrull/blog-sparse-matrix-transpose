@@ -111,7 +111,7 @@ void run_hpx(std::vector<IndexT> const & A_rows, std::vector<IndexT>         A_c
   // create a vector holding the current row indices (future column indices) of each value
   std::vector<IndexT> row_ind; row_ind.resize(A_cols.size());
   for_loop(execution::par_unseq, 0, A_rows.size()-1,
-           [&](IndexT i) {
+           [&row_ind, &A_rows](IndexT i) {
              // fill the row indices for this row
              std::fill(row_ind.begin() + A_rows[i],
                        row_ind.begin() + A_rows[i+1],
@@ -137,7 +137,7 @@ void run_hpx(std::vector<IndexT> const & A_rows, std::vector<IndexT>         A_c
   // scan the new row indices (the newly sorted A_cols) to locate row boundaries
   B_rows.resize(A_rows.size());         // assuming square matrix
   for_loop(execution::par_unseq, 0, B_rows.size(),
-           [&](IndexT row) {
+           [&A_cols, &B_rows](IndexT row) {
              auto it = std::lower_bound(A_cols.begin(), A_cols.end(), row);
              B_rows[row] = std::distance(A_cols.begin(), it);
            });
