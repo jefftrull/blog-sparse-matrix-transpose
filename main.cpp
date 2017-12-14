@@ -77,7 +77,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "Map2Map",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<std::map<unsigned int, double> > B;
         run(A_map, B);
       }
@@ -86,7 +86,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "Map2FlatMap",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<boost::container::flat_map<unsigned int, double> > B(N);
         for (std::size_t j=0; j<N; ++j)
           B[j].reserve(2*nnz_per_row);
@@ -97,7 +97,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "Map2CSR",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<unsigned int> B_rows;
         std::vector<unsigned int> B_cols;
         std::vector<double> B_values;
@@ -108,7 +108,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "FlatMap2Map",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<std::map<unsigned int, double> > B;
         run(A_flatmap, B);
       }
@@ -117,7 +117,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "FlatMap2FlatMap",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<boost::container::flat_map<unsigned int, double> > B(N);
         for (std::size_t j=0; j<N; ++j)
           B[j].reserve(2*nnz_per_row);
@@ -128,7 +128,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "FlatMap2CSR",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<unsigned int> B_rows;
         std::vector<unsigned int> B_cols;
         std::vector<double> B_values;
@@ -139,7 +139,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "CSR2Map",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<std::map<unsigned int, double> > B;
         run(A_csr_rows, A_csr_cols, A_csr_values, B);
       }
@@ -148,7 +148,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "CSR2FlatMap",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<boost::container::flat_map<unsigned int, double> > B(N);
         for (std::size_t j=0; j<N; ++j)
           B[j].reserve(2*nnz_per_row);
@@ -159,7 +159,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "CSR2CSR",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<unsigned int> B_rows;
         std::vector<unsigned int> B_cols;
         std::vector<double> B_values;
@@ -170,7 +170,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "CSR2CSR-HPX-SORT",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<unsigned int> B_rows;
         std::vector<unsigned int> B_cols;
         std::vector<double> B_values;
@@ -181,7 +181,7 @@ int hpx_main(int argc, char **argv)
   benchmark::RegisterBenchmark(
     "CSR2CSR-HPX-MERGE",
     [=](benchmark::State & state) {
-      while (state.KeepRunning()) {
+      for (auto _ : state) {
         std::vector<unsigned int> B_rows;
         std::vector<unsigned int> B_cols;
         std::vector<double> B_values;
