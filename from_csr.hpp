@@ -203,10 +203,7 @@ merge_rows_by_col_inplace(RowIter row_idx_start, // subrange of the row indices
     .then([=](auto const&) {
         // merge those halves back into the original
 
-        // note: using sequential execution policy here
-        // there seems to be a bug in merge:
-        // https://github.com/STEllAR-GROUP/hpx/issues/2964
-        merge(execution::seq,
+        merge(execution::par,
               tmp_start + *row_idx_start,
               tmp_start + *row_idx_mid,
               tmp_start + *row_idx_mid,
@@ -260,7 +257,7 @@ merge_rows_by_col_to(RowIter row_idx_start,
     .then([=](auto const &) {
         // merge the halves into the destination
 
-        merge(execution::seq,
+        merge(execution::par,
               col_start + *row_idx_start,
               col_start + *row_idx_mid,
               col_start + *row_idx_mid,
